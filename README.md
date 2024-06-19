@@ -27,7 +27,7 @@ Diseno basado en: [FIGMA](https://www.figma.com/file/aN7ETYb7WHcETyKD2fgCs6/Form
 ## Instalación
 
 ```bash
-  cd ../rentacar
+  cd /rentacar
   npm install
   npm run dev
 ```
