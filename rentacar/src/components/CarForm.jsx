@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { brands, models } from "../marca";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
+import { useForm } from "react-hook-form";
 
 const Banner = styled.div`
   display: flex;
@@ -179,50 +180,45 @@ const Button = styled.button`
     //cebtrar boton
     margin-left: 10%;
     width: 80%;
-  
   }
 `;
 
 function CarForm() {
-  const [name, setName] = useState({
-    name: "",
-    seller_rut: "",
-    brand: brands[0],
-    model: models[brands[0]][0],
-    license_plate: "",
-    price: "",
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm({
+    defaultValues: {
+      name: "",
+      seller_rut: "",
+      brand: brands[0],
+      model: models[brands[0]][0],
+      license_plate: "",
+      price: "",
+    },
   });
-
-  const handleChange = (e) => {
-    setName({
-      ...name,
-      [e.target.name]: e.target.value,
-    });
-
-    if (name === "brand") {
-      setName({
-        ...name,
-        brand: value,
-        model: models[value][0],
-      });
-    }
-  };
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    //Comprobar que datos se estan enviando
-    console.log(name);
+  const onSubmit = (data) => {
+    console.log(data);
     dispatch(
       addCar({
-        ...name,
+        ...data,
         id: uuidv4(),
       })
     );
     navigate("/");
   };
+
+  const watchBrand = watch("brand");
+  React.useEffect(() => {
+    setValue("model", models[watchBrand][0]);
+  }, [watchBrand, setValue]);
 
   return (
     <div>
@@ -243,7 +239,7 @@ function CarForm() {
             </p>
           </div>
           <div>
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleSubmit(onSubmit)}>
               <h3>Datos del vendedor:</h3>
               <BoxInfo>
                 <Cell1>
@@ -251,24 +247,27 @@ function CarForm() {
                   <input
                     type="text"
                     id="name"
-                    value={name.name}
-                    name="name"
-                    onChange={handleChange}
-                    required
+                    {...register("name", { required: "Nombre es requerido" })}
                     autoComplete="name"
                   />
+                  {errors.name && <p>{errors.name.message}</p>}
                 </Cell1>
                 <Cell>
                   <label htmlFor="seller_rut">Rut Vendedor</label>
                   <input
                     type="text"
                     id="seller_rut"
-                    value={name.seller_rut}
-                    name="seller_rut"
-                    onChange={handleChange}
-                    required
+                    {...register("seller_rut", {
+                      required: "Rut es requerido",
+                      //Formato rut chileno
+                      pattern: {
+                        value: /^[0-9]{7,8}-[0-9Kk]$/,
+                        message: "Rut no válido",
+                      },
+                    })}
                     autoComplete="off"
                   />
+                  {errors.seller_rut && <p>{errors.seller_rut.message}</p>}
                 </Cell>
               </BoxInfo>
               <h3>Datos del vendedor:</h3>
@@ -278,21 +277,26 @@ function CarForm() {
                   <input
                     type="text"
                     id="license_plate"
-                    value={name.license_plate}
-                    name="license_plate"
-                    onChange={handleChange}
-                    required
+                    {...register("license_plate", {
+                      required: "Patente es requerida",
+                      //Formato patente chilena auto/moto
+                      pattern: {
+                        value: /^[a-zA-Z]{4}\d{2}$|^[a-zA-Z]{2}\d{4}$|^[a-zA-Z]{3}\d{2}$/,
+                        message: "Patente auto/moto no válida",
+                      },
+
+                    })}
                     autoComplete="off"
                   />
+                  {errors.license_plate && (
+                    <p>{errors.license_plate.message}</p>
+                  )}
                 </Cell3>
                 <Cell3>
                   <label htmlFor="brand">Marca del vehículo</label>
                   <select
-                    name="brand"
                     id="brand"
-                    value={name.brand}
-                    onChange={handleChange}
-                    required
+                    {...register("brand", { required: "Marca es requerida" })}
                     autoComplete="off"
                   >
                     {brands.map((brand) => (
@@ -301,34 +305,40 @@ function CarForm() {
                       </option>
                     ))}
                   </select>
+                  {errors.brand && <p>{errors.brand.message}</p>}
                 </Cell3>
                 <Cell3>
                   <label htmlFor="model">Modelo</label>
                   <select
-                    name="model"
                     id="model"
-                    onChange={handleChange}
-                    required
+                    {...register("model", { required: "Modelo es requerido" })}
                     autoComplete="off"
                   >
-                    {models[name.brand].map((model) => (
+                    {models[watchBrand].map((model) => (
                       <option key={model} value={model}>
                         {model}
                       </option>
                     ))}
                   </select>
+                  {errors.model && <p>{errors.model.message}</p>}
                 </Cell3>
                 <Cell3>
                   <label htmlFor="price">Precio del vehículo</label>
                   <input
-                    type="text"
+                    type="number"
                     id="price"
-                    value={name.price}
-                    name="price"
-                    onChange={handleChange}
-                    required
+                    {...register("price", {
+                      required: "Precio es requerido",
+                      valueAsNumber: true,
+                      min: { value: 1, message: "Precio debe ser mayor a 0" },
+                      max: {
+                        value: 1000000000,
+                        message: "Precio debe ser menor a 100000000000",
+                      },
+                    })}
                     autoComplete="off"
                   />
+                  {errors.price && <p>{errors.price.message}</p>}
                 </Cell3>
               </BoxInfo1>
               <Button type="submit">Enviar</Button>
